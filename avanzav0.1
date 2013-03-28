@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+		<title>three.js webgl - collada</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			a { color: skyblue }
+		</style>
+	</head>
+	<body>
+
+		<script src="three.min.js"></script>
+
+		<script src="ColladaLoader.js"></script>
+		<script src="THREEx.KeyboardState.js"></script>
+		<script src="Detector.js"></script>
+		<script src="stats.min.js"></script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var xAxis = new THREE.Vector3( 1, 0, 0 );
+			var yAxis = new THREE.Vector3( 0, 1, 0 );
+			var zAxis = new THREE.Vector3( 0, 0, 1 );
+
+			var container, stats;
+			var keyboard = new THREEx.KeyboardState();
+			var camera, scene, renderer, objects;
+			var particleLight, pointLight;
+			var dae, skin;
+
+			var loader = new THREE.ColladaLoader();
+			loader.options.convertUpAxis = true;
+
+			loader.load( 'recRun.DAE', function ( collada ) {
+
+				dae = collada.scene;
+				skin = collada.skins[ 0 ];
+
+				dae.scale.x = dae.scale.y = dae.scale.z = 0.04;
+				dae.updateMatrix();
+
+				init();
+				animate();
+
+			} );
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 20000 );
+				scene = new THREE.Scene();
+
+				//FIELD
+
+				var planeGeometry = new THREE.PlaneGeometry(25,25);
+				var planeMaterial = new THREE.MeshLambertMaterial( { map: THREE.ImageUtils.loadTexture( 'bg.jpg' ), color: 0xffffff } );
+
+					
+				var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+					plane.castShadow = false;
+					plane.receiveShadow = true;
+					plane.rotation.x = - Math.PI / 2;
+					plane.material.map.repeat.set( 8, 8 );
+					plane.material.map.wrapS = plane.material.map.wrapT = THREE.RepeatWrapping;
+				
+				scene.add( plane );
+	
+
+				//COLLADA 
+				dae.position.y = 0.90;
+				scene.add( dae );
+				// AXIS HELPER
+				var axes = new THREE.AxisHelper();
+				axes.scale.set(1, 1, 1);
+				scene.add(axes);
+
+				// Lights
+
+				scene.add( new THREE.AmbientLight( 0xcccccc ) );
+
+				var directionalLight = new THREE.DirectionalLight(0xeeeeee,0.7);
+				directionalLight.position.x = -0.5;
+				directionalLight.position.y = 0.5;
+				directionalLight.position.z = 0.5;
+				directionalLight.position.normalize();
+				scene.add( directionalLight );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				container.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+
+				//
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			//
+
+			var t = 0;
+			var clock = new THREE.Clock();
+			var startFrame = 0, endFrame = 58, totalFrames = endFrame - startFrame, lastFrame;
+			function animate() {
+
+				requestAnimationFrame( animate );
+				undate();
+				render();
+				stats.update();
+
+			}
+
+			function render() {
+				camera.position.x = -30;
+				camera.position.y = 25;
+				camera.position.z = -30;
+
+				camera.lookAt( scene.position );
+				renderer.render( scene, camera );
+			}
+
+			function undate(){
+				//controls.update();
+				var delta = clock.getDelta();
+				var moveDistance = 10 * delta;
+
+				// move forward / backward
+		if ( keyboard.pressed("W") || keyboard.pressed("up") )
+		{
+			startFrame = 0, endFrame = 58, totalFrames = endFrame - startFrame
+			dae.translateX( moveDistance );
+		}
+
+		else if ( keyboard.pressed("S") || keyboard.pressed("down") )
+		{
+			startFrame = 0, endFrame = 58, totalFrames = endFrame - startFrame
+			dae.translateX( -moveDistance );
+		}
+		else
+		{
+			startFrame = 0, endFrame = 58, totalFrames = endFrame - startFrame
+		}	
+
+
+			
+			if ( keyboard.pressed("A") || keyboard.pressed("left") )
+			{
+			startFrame = 0, endFrame = 58, totalFrames = endFrame - startFrame
+			dae.translateZ( -moveDistance );
+			}
+			if ( keyboard.pressed("D") || keyboard.pressed("right") )
+			{
+			startFrame = 0, endFrame = 58, totalFrames = endFrame - startFrame
+			dae.translateZ( moveDistance );
+			}
+				
+				if ( t > 1 ) t = 0;
+				if ( skin )
+				{
+				skin.morphTargetInfluences[lastFrame] = 0;
+				var currentFrame = startFrame + Math.floor(t*totalFrames);
+				skin.morphTargetInfluences[currentFrame] = 1;
+				t += delta;
+				lastFrame = currentFrame;
+
+				}
+
+			}
+		</script>
+	</body>
+</html>
